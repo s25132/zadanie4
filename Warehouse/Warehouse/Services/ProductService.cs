@@ -13,9 +13,14 @@ namespace Warehouse.Services
             _repo = repo; 
         }
 
-        public async Task<int> AddProductToWarehouse(Request addRequest)
+        public async Task<int> AddProductToWarehouseAsync(Request addRequest)
         {
-            return await _repo.AddProductToWarehouse(addRequest);
+            return await _repo.AddProductToWarehouseAsync(addRequest);
+        }
+
+        public async Task<int> AddProductToWarehouseProcedureAsync(Request addRequest)
+        {
+            return await _repo.AddProductToWarehouseByProcedureAsync(addRequest);
         }
     }
 }

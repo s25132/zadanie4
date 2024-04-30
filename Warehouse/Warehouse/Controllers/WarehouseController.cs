@@ -1,13 +1,11 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Warehouse.Exceptions;
 using Warehouse.Model;
 using Warehouse.Services;
 
 namespace Warehouse.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("[controller]/[action]")]
     public class WarehouseController : ControllerBase
     {
  
@@ -18,15 +16,29 @@ namespace Warehouse.Controllers
             _productService = productService;
         }
 
-        [HttpPost(Name = "AddProductToWarehouse")]
-        public async Task<IActionResult> AddProductToWarehouse([FromBody] Request addRequest)
+        [HttpPost(Name = "AddProductToWarehouseAsync")]
+        public async Task<IActionResult> AddProductToWarehouseAsync([FromBody] Request addRequest)
         {
             try
             {
-                int result = await _productService.AddProductToWarehouse(addRequest);
+                int result = await _productService.AddProductToWarehouseAsync(addRequest);
                 return Ok(result);
             }
             catch (Exception ex) 
+            {
+                return getError(ex);
+            }
+        }
+
+        [HttpPost(Name = "AddProductToWarehouseProcedureAsync")]
+        public async Task<IActionResult> AddProductToWarehouseProcedureAsync([FromBody] Request addRequest)
+        {
+            try
+            {
+                int result = await _productService.AddProductToWarehouseProcedureAsync(addRequest);
+                return Ok(result);
+            }
+            catch (Exception ex)
             {
                 return getError(ex);
             }

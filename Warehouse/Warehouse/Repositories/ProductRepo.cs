@@ -1,8 +1,8 @@
-﻿using System.Data.Common;
+﻿using System.Data;
+using System.Data.Common;
 using System.Data.SqlClient;
 using Warehouse.Exceptions;
 using Warehouse.Model;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Warehouse.Repositories
 {
@@ -16,7 +16,7 @@ namespace Warehouse.Repositories
             _configuration = configuration;
         }
 
-        public async Task<int>  AddProductToWarehouse(Request addRequest)
+        public async Task<int> AddProductToWarehouseAsync(Request addRequest)
         {
             using var con = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
             using var cmd = new SqlCommand();
@@ -31,14 +31,14 @@ namespace Warehouse.Repositories
                 cmd.CommandText = "select Price from Product where IdProduct = @idProduct";
                 cmd.Parameters.AddWithValue("@idProduct", addRequest.IdProduct);
 
-                Double price = Convert.ToDouble(cmd.ExecuteScalar());
+                Double price = Convert.ToDouble(await cmd.ExecuteScalarAsync());
                 if (price > 0)
                 {
                     cmd.Parameters.Clear();
                     cmd.CommandText = "select count(1) from Warehouse where IdWarehouse = @idWarehouse";
                     cmd.Parameters.AddWithValue("@idWarehouse", addRequest.IdWarehouse);
 
-                    Int32 countWarehouse = Convert.ToInt32(cmd.ExecuteScalar());
+                    Int32 countWarehouse = Convert.ToInt32(await cmd.ExecuteScalarAsync());
 
                     if(countWarehouse > 0)
                     {  //Warehouse istnieje
@@ -50,7 +50,7 @@ namespace Warehouse.Repositories
                         cmd.Parameters.AddWithValue("@amount", addRequest.Amount);
                         cmd.Parameters.AddWithValue("@createdAt", addRequest.CreatedAt);
 
-                        orderId = Convert.ToInt32(cmd.ExecuteScalar());
+                        orderId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                         Console.WriteLine("orderId : " + orderId);
                         if (orderId > 0)
                         { //Order istnieje
@@ -60,7 +60,7 @@ namespace Warehouse.Repositories
                             cmd.CommandText = "select count(1) from Product_Warehouse where IdOrder = @idOrder";
                             cmd.Parameters.AddWithValue("@idOrder", orderId);
 
-                            Int32 countOrder = Convert.ToInt32(cmd.ExecuteScalar());
+                            Int32 countOrder = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                             Console.WriteLine("countOrder : " + countOrder);
 
                             if (countOrder == 0)
@@ -71,7 +71,7 @@ namespace Warehouse.Repositories
                                 cmd.CommandText = "UPDATE \"Order\" SET FulfilledAt=@fulfilledAt WHERE IdOrder = @idOrder";
                                 cmd.Parameters.AddWithValue("@fulfilledAt", DateTime.Now);
                                 cmd.Parameters.AddWithValue("@idOrder", orderId);
-                                cmd.ExecuteNonQuery();
+                                await cmd.ExecuteNonQueryAsync();
                                 //insert
 
                                 cmd.Parameters.Clear();
@@ -85,7 +85,7 @@ namespace Warehouse.Repositories
                                 cmd.Parameters.AddWithValue("@price", addRequest.Amount * price);
                                 cmd.Parameters.AddWithValue("@createdAt", DateTime.Now);
 
-                                var id = (int)cmd.ExecuteScalar();
+                                var id = (int) await cmd.ExecuteScalarAsync();
 
                                 await tran.CommitAsync();
                                 return id;
@@ -115,6 +115,34 @@ namespace Warehouse.Repositories
                 await tran.RollbackAsync();
                 throw;
             }
+        }
+
+        public async Task<int> AddProductToWarehouseByProcedureAsync(Request addRequest)
+        {
+            using var con = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
+            using var com = new SqlCommand("AddProductToWarehouse", con);
+            await con.OpenAsync();
+
+
+            try
+            {
+                com.CommandType = CommandType.StoredProcedure;
+
+                com.Parameters.Add(new SqlParameter("@IdProduct", addRequest.IdProduct));
+                com.Parameters.Add(new SqlParameter("@IdWarehouse", addRequest.IdWarehouse));
+                com.Parameters.Add(new SqlParameter("@Amount", addRequest.Amount));
+                com.Parameters.Add(new SqlParameter("@CreatedAt", addRequest.CreatedAt));
+
+                Decimal result = (Decimal) await com.ExecuteScalarAsync();
+
+                return Decimal.ToInt32(result);
+
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+
         }
     }
 }

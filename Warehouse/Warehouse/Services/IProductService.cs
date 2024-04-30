@@ -4,6 +4,7 @@ namespace Warehouse.Services
 {
     public interface IProductService
     {
-       Task<int> AddProductToWarehouse(Request addRequest);
+       Task<int> AddProductToWarehouseAsync(Request addRequest);
+       Task<int> AddProductToWarehouseProcedureAsync(Request addRequest);
     }
 }
