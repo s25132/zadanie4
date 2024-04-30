@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Warehouse.Exceptions;
 using Warehouse.Model;
 using Warehouse.Services;
 
@@ -9,20 +11,30 @@ namespace Warehouse.Controllers
     public class WarehouseController : ControllerBase
     {
  
-        private readonly ILogger<WarehouseController> _logger;
         private IProductService _productService;
 
-        public WarehouseController(ILogger<WarehouseController> logger, IProductService productService)
+        public WarehouseController(IProductService productService)
         {
-            _logger = logger;
             _productService = productService;
         }
 
         [HttpPost(Name = "AddProductToWarehouse")]
-        public IActionResult AddProductToWarehouse([FromBody] Request addRequest)
+        public async Task<IActionResult> AddProductToWarehouse([FromBody] Request addRequest)
         {
-            _logger.LogDebug("Request " + addRequest);
-            return Ok(_productService.AddProductToWarehouse(addRequest));
+            try
+            {
+                int result = await _productService.AddProductToWarehouse(addRequest);
+                return Ok(result);
+            }
+            catch (Exception ex) 
+            {
+                return getError(ex);
+            }
+        }
+
+        private ObjectResult getError(Exception ex)
+        {
+            return StatusCode(StatusCodes.Status400BadRequest, ex.Message);
         }
     }
 }

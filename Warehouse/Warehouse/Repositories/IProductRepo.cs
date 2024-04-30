@@ -4,6 +4,6 @@ namespace Warehouse.Repositories
 {
     public interface IProductRepo
     {
-        int AddProductToWarehouse(Request addRequest);
+        Task<int> AddProductToWarehouse(Request addRequest);
     }
 }
